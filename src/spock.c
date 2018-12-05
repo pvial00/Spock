@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 #include "ganja.c"
-#include "dyefamily.c"
 
 struct spock_state {
     uint32_t Ka[40];
