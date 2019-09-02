@@ -4,6 +4,5 @@ A Speck-like block cipher that hopes to improve on overall security by working w
 
 More rounds and extra keys means more resources and slightly slower performance than Speck.
 
-Rounds = 40
-
-Key size = 128 bit (currently implemented for 128 bit keys.  Other key sizes will follow)
+Rounds = 40 for 128 bit keys
+Rounds = 48 for 256 bit keys
