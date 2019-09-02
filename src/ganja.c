@@ -10,8 +10,7 @@ uint32_t conv8to32(unsigned char buf[]) {
     output = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
     return output;
 }
-
-uint32_t rotl(uint32_t v, int c) {
+uint32_t grotl(uint32_t v, int c) {
     return ((v << c) | (v >> (32 - c)));
 }
 
@@ -95,17 +94,17 @@ unsigned char * ganja_digest(unsigned char * data, long datalen, unsigned char *
         memcpy(temp32, H, 8 * sizeof(uint32_t));
 	for (r = 0; r < rounds; r++) {
             H[0] = (H[0] + H[4]) & 0xFFFFFFFF;
-            H[1] = rotl(H[1] ^ H[5], 2);
+            H[1] = grotl(H[1] ^ H[5], 2);
             H[2] = (H[2] + H[6]) & 0xFFFFFFFF;
-            H[3] = rotl(H[3] ^ H[7], 5);
+            H[3] = grotl(H[3] ^ H[7], 5);
             H[4] = (H[4] + H[2]) & 0xFFFFFFFF;
-            H[5] = rotl(H[5] ^ H[3], 7);
+            H[5] = grotl(H[5] ^ H[3], 7);
             H[6] = (H[6] + H[5]) & 0xFFFFFFFF;
-            H[7] = rotl(H[7] ^ H[6], 12);
+            H[7] = grotl(H[7] ^ H[6], 12);
             H[0] = F1(H[0], H[2], H[4], H[6]);
             H[1] = F2(H[1], H[3], H[5], H[7]);
-            H[2] = rotl(H[2] ^ H[0], 3);
-            H[3] = rotl(H[3] ^ H[1], 8);
+            H[2] = grotl(H[2] ^ H[0], 3);
+            H[3] = grotl(H[3] ^ H[1], 8);
             H[4] = H[4] ^ H[2];
             H[5] = H[5] ^ H[3];
             H[6] = (H[6] + H[4]) & 0xFFFFFFFF;
@@ -203,17 +202,17 @@ unsigned char * ganja_hmac(unsigned char * data, long datalen, unsigned char * D
         memcpy(temp32, H, 8 * sizeof(uint32_t));
 	for (r = 0; r < rounds; r++) {
             H[0] = (H[0] + H[4]) & 0xFFFFFFFF;
-            H[1] = rotl(H[1] ^ H[5], 2);
+            H[1] = grotl(H[1] ^ H[5], 2);
             H[2] = (H[2] + H[6]) & 0xFFFFFFFF;
-            H[3] = rotl(H[3] ^ H[7], 5);
+            H[3] = grotl(H[3] ^ H[7], 5);
             H[4] = (H[4] + H[2]) & 0xFFFFFFFF;
-            H[5] = rotl(H[5] ^ H[3], 7);
+            H[5] = grotl(H[5] ^ H[3], 7);
             H[6] = (H[6] + H[5]) & 0xFFFFFFFF;
-            H[7] = rotl(H[7] ^ H[6], 12);
+            H[7] = grotl(H[7] ^ H[6], 12);
             H[0] = F1(H[0], H[2], H[4], H[6]);
             H[1] = F2(H[1], H[3], H[5], H[7]);
-            H[2] = rotl(H[2] ^ H[0], 3);
-            H[3] = rotl(H[3] ^ H[1], 8);
+            H[2] = grotl(H[2] ^ H[0], 3);
+            H[3] = grotl(H[3] ^ H[1], 8);
             H[4] = H[4] ^ H[2];
             H[5] = H[5] ^ H[3];
             H[6] = (H[6] + H[4]) & 0xFFFFFFFF;

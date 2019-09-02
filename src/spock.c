@@ -5,9 +5,9 @@
 #include "ganja.c"
 
 struct spock_state {
-    uint32_t Ka[40];
-    uint32_t Kb[40];
-    uint32_t d[40][4];
+    uint32_t Ka[48];
+    uint32_t Kb[48];
+    uint32_t d[48][4];
 };
 
 uint32_t rotl(uint32_t a, int b) {
