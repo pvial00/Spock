@@ -9,6 +9,7 @@ struct spock_state {
     uint32_t Ka[48];
     uint32_t Kb[48];
     uint32_t d[48][4];
+    int rounds;
 };
 
 uint32_t rotl(uint32_t a, int b) {
@@ -79,67 +80,194 @@ void roundB(struct spock_state *state, uint32_t *xla, uint32_t *xlb, uint32_t *x
     *xrb = d;
 }
 
-void ksa(struct spock_state *state, unsigned char * key, int keylen, int rounds) {
+void spock_ksa(struct spock_state *state, unsigned char * keyp, int keylen) {
     uint32_t temp = 0x00000001;
     struct spock_state tempstate;
     int m = 0;
-    int b;
-    int inc = keylen / 4;
-    int step = inc / 4;
-    uint32_t *k[inc];
-    for (int i = 0; i < inc; i++) {
+    int b, i, r, x;
+    uint32_t k[8];
+    memset(k, 0, 8*sizeof(uint32_t));
+    memset(state->Ka, 0, state->rounds*sizeof(uint32_t));
+    memset(state->Kb, 0, state->rounds*sizeof(uint32_t));
+    memset(tempstate.Ka, 0, state->rounds*sizeof(uint32_t));
+    memset(tempstate.Kb, 0, state->rounds*sizeof(uint32_t));
+    memset(state->d, 0, 4*(state->rounds*sizeof(uint32_t)));
+    memset(tempstate.d, 0, 4*(state->rounds*sizeof(uint32_t)));
+    for (i = 0; i < 8; i++) {
         k[i] = 0;
-        k[i] = (key[m] << 24) + (key[m+1] << 16) + (key[m+2] << 8) + key[m+3];
-        m += step;
+        k[i] = (keyp[m] << 24) + (keyp[m+1] << 16) + (keyp[m+2] << 8) + keyp[m+3];
+        m += 4;
     }
 
-    int c = 0;
-    for (int r = 0; r < (rounds / inc); r++) {
-        for (int i = 0; i < inc; i++) {
-            tempstate.Ka[c] = k[i];
-            tempstate.Kb[c] = k[i];
-            c += 1;
+    for (r = 0; r < state->rounds; r++) {
+        k[0] = rotr(k[0], 8);
+        k[0] += k[4];
+        k[0] ^= k[6];
+        k[1] = rotr(k[1], 7);
+        k[1] += k[2];
+        k[1] ^= k[0];
+        k[2] = rotr(k[2], 2);
+        k[2] ^= k[1];
+        k[3] = rotl(k[3], 3);
+        k[3] ^= k[5];
+        k[3] += k[7];
+
+        k[4] = rotr(k[5], 8);
+        k[4] += k[3];
+        k[4] ^= k[2];
+        k[5] = rotr(k[5], 7);
+        k[5] += k[0];
+        k[5] ^= k[6];
+        k[6] = rotr(k[6], 2);
+        k[6] ^= k[2];
+        k[7] = rotl(k[7], 3);
+        k[7] ^= k[4];
+        k[7] += k[5];
+        for (i = 0; i < 8; i++) {
+            tempstate.Ka[r] ^= (uint32_t)k[i];
         }
     }
-    c = 0;
-    for (int r = 0; r < rounds; r++) {
-        for (int i = 0; i < 4; i++) {
-            state->d[r][i] = 0;
-            tempstate.d[r][i] = k[i];
+    for (r = 0; r < state->rounds; r++) {
+        k[0] = rotr(k[0], 8);
+        k[0] += k[4];
+        k[0] ^= k[6];
+        k[1] = rotr(k[1], 7);
+        k[1] += k[2];
+        k[1] ^= k[0];
+        k[2] = rotr(k[2], 2);
+        k[2] ^= k[1];
+        k[3] = rotl(k[3], 3);
+        k[3] ^= k[5];
+        k[3] += k[7];
+
+        k[4] = rotr(k[5], 8);
+        k[4] += k[3];
+        k[4] ^= k[2];
+        k[5] = rotr(k[5], 7);
+        k[5] += k[0];
+        k[5] ^= k[6];
+        k[6] = rotr(k[6], 2);
+        k[6] ^= k[2];
+        k[7] = rotl(k[7], 3);
+        k[7] ^= k[4];
+        k[7] += k[5];
+        for (i = 0; i < 8; i++) {
+            tempstate.Kb[r] ^= (uint32_t)k[i];
         }
     }
-    c = 0;
-    b = 0;
-    for (int r = 0; r < (rounds / inc); r++) {
-        m = 0;
-        for (int i = 0; i < (inc / 4); i++) {
-            roundF(&tempstate, &k[m], &k[m+1], &k[m+2], &k[m+3], rounds);
-            m += 4;
-        }
-        for (int i = 0; i < inc; i++) {
-            state->Ka[c] = k[i];
-            c += 1;
-        }
-        m = 0;
-        for (int i = 0; i < (inc / 4); i++) {
-            roundF(&tempstate, &k[m], &k[m+1], &k[m+2], &k[m+3], rounds);
-            m += 4;
-        }
-        for (int i = 0; i < inc; i++) {
-            state->Kb[b] = k[i];
-            b += 1;
+    for (r = 0; r < state->rounds; r++) {
+        for (i = 0; i < 4; i++) {
+            k[0] = rotr(k[0], 8);
+            k[0] += k[4];
+            k[0] ^= k[6];
+            k[1] = rotr(k[1], 7);
+            k[1] += k[2];
+            k[1] ^= k[0];
+            k[2] = rotr(k[2], 2);
+            k[2] ^= k[1];
+            k[3] = rotl(k[3], 3);
+            k[3] ^= k[5];
+            k[3] += k[7];
+
+            k[4] = rotr(k[5], 8);
+            k[4] += k[3];
+            k[4] ^= k[2];
+            k[5] = rotr(k[5], 7);
+            k[5] += k[0];
+            k[5] ^= k[6];
+            k[6] = rotr(k[6], 2);
+            k[6] ^= k[2];
+            k[7] = rotl(k[7], 3);
+            k[7] ^= k[4];
+            k[7] += k[5];
+            for (x = 0; x < 8; x++) {
+                tempstate.d[r][i] ^= (uint32_t)k[x];
+            }
         }
     }
-    for (int r = 0; r < rounds; r++) {
-        m = 0;
-        for (int i = 0; i < (inc / 4); i++) {
-            roundF(&tempstate, &k[m], &k[m+1], &k[m+2], &k[m+3], rounds);
-            m += 4;
+    for (r = 0; r < state->rounds; r++) {
+        k[0] = rotr(k[0], 8);
+        k[0] += k[4];
+        k[0] ^= k[6];
+        k[1] = rotr(k[1], 7);
+        k[1] += k[2];
+        k[1] ^= k[0];
+        k[2] = rotr(k[2], 2);
+        k[2] ^= k[1];
+        k[3] = rotl(k[3], 3);
+        k[3] ^= k[5];
+        k[3] += k[7];
+
+        k[4] = rotr(k[5], 8);
+        k[4] += k[3];
+        k[4] ^= k[2];
+        k[5] = rotr(k[5], 7);
+        k[5] += k[0];
+        k[5] ^= k[6];
+        k[6] = rotr(k[6], 2);
+        k[6] ^= k[2];
+        k[7] = rotl(k[7], 3);
+        k[7] ^= k[4];
+        k[7] += k[5];
+        for (i = 0; i < 8; i++) {
+            state->Ka[r] ^= (uint32_t)k[i];
         }
-        state->d[r][0] = k[0];
-        state->d[r][1] = k[1];
-        state->d[r][2] = k[2];
-        state->d[r][3] = k[3];
+        k[0] = rotr(k[0], 8);
+        k[0] += k[4];
+        k[0] ^= k[6];
+        k[1] = rotr(k[1], 7);
+        k[1] += k[2];
+        k[1] ^= k[0];
+        k[2] = rotr(k[2], 2);
+        k[2] ^= k[1];
+        k[3] = rotl(k[3], 3);
+        k[3] ^= k[5];
+        k[3] += k[7];
+
+        k[4] = rotr(k[5], 8);
+        k[4] += k[3];
+        k[4] ^= k[2];
+        k[5] = rotr(k[5], 7);
+        k[5] += k[0];
+        k[5] ^= k[6];
+        k[6] = rotr(k[6], 2);
+        k[6] ^= k[2];
+        k[7] = rotl(k[7], 3);
+        k[7] ^= k[4];
+        k[7] += k[5];
+        for (i = 0; i < 8; i++) {
+            state->Kb[r] ^= (uint32_t)k[i];
+        }
+    }
+    for (r = 0; r < state->rounds; r++) {
+        for (i = 0; i < 4; i++) {
+            k[0] = rotr(k[0], 8);
+            k[0] += k[4];
+            k[0] ^= k[6];
+            k[1] = rotr(k[1], 7);
+            k[1] += k[2];
+            k[1] ^= k[0];
+            k[2] = rotr(k[2], 2);
+            k[2] ^= k[1];
+            k[3] = rotl(k[3], 3);
+            k[3] ^= k[5];
+            k[3] += k[7];
+
+            k[4] = rotr(k[5], 8);
+            k[4] += k[3];
+            k[4] ^= k[2];
+            k[5] = rotr(k[5], 7);
+            k[5] += k[0];
+            k[5] ^= k[6];
+            k[6] = rotr(k[6], 2);
+            k[6] ^= k[2];
+            k[7] = rotl(k[7], 3);
+            k[7] ^= k[4];
+            k[7] += k[5];
+            for (x = 0; x < 8; x++) {
+                state->d[r][i] ^= (uint32_t)k[x];
+            }
+        }
     }
 }
 
@@ -153,7 +281,7 @@ int main(int arc, char *argv[]) {
     struct spock_state state;
     int iv_length = 16;
     int keylen = 16;
-    int rounds = 40;
+    state.rounds = 48;
     unsigned char iv[iv_length];
     int c = 0;
     char *mode = argv[1];
@@ -161,7 +289,7 @@ int main(int arc, char *argv[]) {
     char *outf = argv[3];
     char *password = argv[4];
     ganja_kdf(password, strlen(password), key, 10000, keylen, "WildLFSRCipherv1");
-    ksa(&state, key, keylen, rounds);
+    spock_ksa(&state, key, keylen);
     int v = 16;
     int x, i;
     int t = 0;
@@ -200,7 +328,7 @@ int main(int arc, char *argv[]) {
             for (int r = 0; r < 4; r++) {
                 block[r] = block[r] ^ last[r];
             }
-	    roundF(&state, &block[0], &block[1], &block[2], &block[3], rounds);
+	    roundF(&state, &block[0], &block[1], &block[2], &block[3], state.rounds);
             for (int r = 0; r < 4; r++) {
                 last[r] = block[r];
             }
@@ -244,7 +372,7 @@ int main(int arc, char *argv[]) {
             for (int r = 0; r < 4; r++) {
                 next[r] = block[r];
             }
-	    roundB(&state, &block[0], &block[1], &block[2], &block[3], rounds);
+	    roundB(&state, &block[0], &block[1], &block[2], &block[3], state.rounds);
             for (int r = 0; r < 4; r++) {
                 block[r] = block[r] ^ last[r];
                 last[r] = next[r];
