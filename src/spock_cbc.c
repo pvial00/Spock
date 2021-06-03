@@ -351,7 +351,7 @@ int spock_cbc_decrypt(unsigned char * msg, int msglen, unsigned char * key, int 
     uint32_t next[4];
     struct spock_state state;
     int iv_length = 16;
-    state->rounds = 48;
+    state.rounds = 48;
     int c = 0;
     spock_ksa(&state, key, keylen);
     int v = 16;
